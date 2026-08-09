@@ -14,6 +14,17 @@ vi.mock("next-themes", () => ({
   ThemeProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
+vi.mock("@portalsdk/react", () => ({
+  useChannel: () => ({
+    messages: [],
+    send: vi.fn(),
+    loadPrevious: vi.fn(),
+    hasPrevious: false,
+    isLoadingPrevious: false,
+    status: "ready",
+  }),
+}));
+
 describe("HomePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
