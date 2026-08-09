@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@portalsdk/core": "^0.1.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "openai": "^5.12.2"
   },
   "devDependencies": {
     "@portalsdk/config": "^0.2.1",
