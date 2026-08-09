@@ -1,4 +1,6 @@
+import "dotenv/config";
 import { createApp } from "./app.js";
+import { startAgentLoop } from "./ai/agentLoop.js";
 
 const PORT = Number(process.env.PORT) || 8080;
 const app = createApp();
@@ -7,6 +9,6 @@ app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
 
-setInterval(() => {
-  console.log("AI Agent Worker Loop running...");
-}, 10_000);
+void startAgentLoop().catch((error) => {
+  console.error("[agent] failed to start agent loop:", error);
+});
