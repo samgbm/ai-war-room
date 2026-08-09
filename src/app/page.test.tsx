@@ -22,6 +22,10 @@ vi.mock("@portalsdk/react", () => ({
     hasPrevious: false,
     isLoadingPrevious: false,
     status: "ready",
+    presence: {
+      kind: "detailed",
+      participants: [{ id: "test-user", anon: true }],
+    },
   }),
 }));
 

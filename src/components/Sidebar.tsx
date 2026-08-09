@@ -1,3 +1,5 @@
+import { PresenceRoster } from "@/components/PresenceRoster";
+
 export function Sidebar() {
   return (
     <aside
@@ -28,10 +30,10 @@ export function Sidebar() {
                   <span className="text-sm font-medium text-[var(--foreground)]">
                     {name}
                   </span>
-                  <span className="size-2 rounded-full bg-[var(--success)]" />
+                  <span className="size-2 rounded-full bg-[var(--primary)]" />
                 </div>
                 <p className="mt-1 font-mono text-[10px] text-[var(--muted)]">
-                  standby · portal roster soon
+                  agent cell · offline mock
                 </p>
               </li>
             ))}
@@ -42,21 +44,7 @@ export function Sidebar() {
           <h3 className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
             Human Operators
           </h3>
-          <ul className="space-y-2">
-            {["Op-Lead", "Watch Desk"].map((name) => (
-              <li
-                key={name}
-                className="rounded-lg border border-dashed border-[var(--border)] px-3 py-2"
-              >
-                <span className="text-sm font-medium text-[var(--foreground)]">
-                  {name}
-                </span>
-                <p className="mt-1 font-mono text-[10px] text-[var(--muted)]">
-                  awaiting presence feed
-                </p>
-              </li>
-            ))}
-          </ul>
+          <PresenceRoster roomId="war-room-alpha" />
         </div>
       </section>
     </aside>
