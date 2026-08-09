@@ -83,7 +83,10 @@ export async function startAgentLoop(): Promise<void> {
       });
 
       flushStream(true);
-      await room.send({ content: { text: fullReply } });
+      await room.send({
+        content: { text: fullReply },
+        mentions: [{ userId: msg.sender.id }],
+      });
       room.setMetadata({});
       await setAgentStatus(room, "Standing by");
     } catch (error) {

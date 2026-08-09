@@ -13,8 +13,8 @@ vi.mock("@portalsdk/react", () => ({
       {
         id: "n-1",
         type: "mention",
-        title: "Scout mentioned you",
-        data: {},
+        title: "Agent Tagged You",
+        data: { text: "Here is a story about a space station orbiting Mars." },
         at: Date.now(),
         read: false,
         markAsRead: markAsReadOne,
@@ -23,7 +23,7 @@ vi.mock("@portalsdk/react", () => ({
         id: "n-2",
         type: "ticket.assigned",
         title: "Ticket assigned: Alpha desk",
-        data: {},
+        data: { text: "Short note" },
         at: Date.now(),
         read: false,
         markAsRead: markAsReadTwo,
@@ -37,15 +37,21 @@ vi.mock("@portalsdk/react", () => ({
 }));
 
 describe("NotificationBell", () => {
-  it("shows the unread badge and renders mock titles in the dropdown", () => {
+  it("shows the unread badge and renders title plus text snippet", () => {
     render(<NotificationBell />);
 
     expect(screen.getByTestId("notification-badge")).toHaveTextContent("2");
 
     fireEvent.click(screen.getByRole("button", { name: /notifications/i }));
 
-    expect(screen.getByText("Scout mentioned you")).toBeInTheDocument();
-    expect(screen.getByText("Ticket assigned: Alpha desk")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Agent Tagged You: Here is a story about a space ...",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Ticket assigned: Alpha desk: Short note..."),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /mark all as read/i }),
     ).toBeInTheDocument();

@@ -4,6 +4,21 @@ import { useInbox } from "@portalsdk/react";
 import { Bell } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+type InboxItemData = {
+  text?: string;
+};
+
+function notificationLabel(item: {
+  title?: string;
+  type: string;
+  data: unknown;
+}) {
+  const title = item.title ?? item.type;
+  const text = (item.data as InboxItemData | undefined)?.text;
+  if (typeof text !== "string") return title;
+  return `${title}: ${text.substring(0, 30)}...`;
+}
+
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const { counter, items, markAllRead } = useInbox();
@@ -93,7 +108,7 @@ export function NotificationBell() {
                       <span className="mt-1.5 size-1.5 shrink-0" aria-hidden />
                     )}
                     <span className="min-w-0 text-sm text-[var(--foreground)]">
-                      {item.title ?? item.type}
+                      {notificationLabel(item)}
                     </span>
                   </button>
                 </li>

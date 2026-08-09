@@ -107,6 +107,7 @@ describe("startAgentLoop", () => {
 
     expect(sendMock).toHaveBeenCalledWith({
       content: { text: "Hello operator." },
+      mentions: [{ userId: "human-op" }],
     });
     expect(setMetadataMock).toHaveBeenCalled();
   });
