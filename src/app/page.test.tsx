@@ -14,6 +14,14 @@ vi.mock("next-themes", () => ({
   ThemeProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
+vi.mock("@portalsdk/react", () => ({
+  useChannel: () => ({
+    messages: [],
+    send: vi.fn(),
+    status: "ready",
+  }),
+}));
+
 vi.mock("@/components/WarRoomChannelProvider", () => ({
   WarRoomChannelProvider: ({ children }: { children: ReactNode }) => children,
   useWarRoomChannel: () => ({

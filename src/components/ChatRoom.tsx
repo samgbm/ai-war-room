@@ -1,11 +1,23 @@
 "use client";
 
+import { useChannel } from "@portalsdk/react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useWarRoomChannel } from "@/components/WarRoomChannelProvider";
+import { WAR_ROOM_CHANNEL } from "@/lib/war-room";
 
 export interface ChatMessage {
   text: string;
 }
+
+type AgentStreamContent = {
+  streamId?: string;
+  chunk?: string;
+};
+
+type AgentStreamState = {
+  id: string;
+  text: string;
+};
 
 function statusTone(status: string) {
   if (status === "ready") return "bg-[var(--success)]";
@@ -23,8 +35,13 @@ function isChatContent(content: unknown): content is ChatMessage {
   );
 }
 
+function isAgentStreamContent(content: unknown): content is AgentStreamContent {
+  return !!content && typeof content === "object";
+}
+
 export function ChatRoom() {
   const [draft, setDraft] = useState("");
+  const [agentStream, setAgentStream] = useState<AgentStreamState | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const stickToBottom = useRef(true);
 
@@ -38,12 +55,53 @@ export function ChatRoom() {
     status,
     typing,
     sendTyping,
+    presence,
   } = useWarRoomChannel();
+
+  // Dedicated listener for live agent token stream (same Portal channel handle).
+  useChannel({
+    ...WAR_ROOM_CHANNEL,
+    channelId: roomId,
+    onMessage: (msg) => {
+      if (msg.ephemeral && msg.type === "agent-stream") {
+        if (!isAgentStreamContent(msg.content)) return;
+        const streamId = msg.content.streamId;
+        const chunk = msg.content.chunk;
+        if (!streamId || typeof chunk !== "string") return;
+
+        setAgentStream((current) => {
+          if (current?.id === streamId) {
+            return { id: streamId, text: current.text + chunk };
+          }
+          return { id: streamId, text: chunk };
+        });
+        return;
+      }
+
+      if (!msg.ephemeral && msg.type !== "cursor" && msg.type !== "agent-stream") {
+        setAgentStream(null);
+      }
+    },
+  });
+
+  // Presence fallback while Portal SDK drops inbound ephemeral frames.
+  useEffect(() => {
+    if (presence?.kind !== "detailed") return;
+    for (const p of presence.participants) {
+      const stream = p.metadata?.agentStream as
+        | { streamId?: string; text?: string }
+        | undefined;
+      if (!stream?.streamId || typeof stream.text !== "string") continue;
+      setAgentStream({ id: stream.streamId, text: stream.text });
+      return;
+    }
+  }, [presence]);
 
   const chatMessages = messages.filter(
     (m) =>
       !m.ephemeral &&
       m.type !== "cursor" &&
+      m.type !== "agent-stream" &&
       isChatContent(m.content),
   );
 
@@ -51,7 +109,7 @@ export function ChatRoom() {
     const el = listRef.current;
     if (!el || !stickToBottom.current) return;
     el.scrollTop = el.scrollHeight;
-  }, [chatMessages.length, typing.length]);
+  }, [chatMessages.length, typing.length, agentStream?.text]);
 
   function onScroll() {
     const el = listRef.current;
@@ -109,7 +167,7 @@ export function ChatRoom() {
         onScroll={onScroll}
         className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-4"
       >
-        {chatMessages.length === 0 ? (
+        {chatMessages.length === 0 && !agentStream ? (
           <li className="m-auto max-w-sm list-none text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--primary)]">
               channel quiet
@@ -133,6 +191,21 @@ export function ChatRoom() {
             </li>
           ))
         )}
+
+        {agentStream ? (
+          <li
+            data-testid="agent-stream"
+            className="list-none rounded-lg border border-dashed border-[var(--primary)] bg-[color-mix(in_oklab,var(--primary)_10%,transparent)] px-3 py-2.5"
+          >
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-[var(--primary)]">
+              Agent · streaming
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-[var(--foreground)]">
+              {agentStream.text}
+              <span className="ml-0.5 inline-block h-4 w-1 animate-pulse bg-[var(--primary)] align-middle" />
+            </p>
+          </li>
+        ) : null}
       </ul>
 
       {typing.length > 0 ? (

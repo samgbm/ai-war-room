@@ -2,6 +2,19 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ChatRoom } from "@/components/ChatRoom";
 
+const onMessageHandlers: Array<(msg: unknown) => void> = [];
+
+vi.mock("@portalsdk/react", () => ({
+  useChannel: (opts: { onMessage?: (msg: unknown) => void }) => {
+    if (opts.onMessage) onMessageHandlers.push(opts.onMessage);
+    return {
+      messages: [],
+      send: vi.fn(),
+      status: "ready",
+    };
+  },
+}));
+
 vi.mock("@/components/WarRoomChannelProvider", () => ({
   useWarRoomChannel: () => ({
     roomId: "war-room-alpha",
@@ -28,6 +41,7 @@ vi.mock("@/components/WarRoomChannelProvider", () => ({
     status: "ready",
     typing: ["agent-007"],
     sendTyping: vi.fn(),
+    presence: undefined,
   }),
 }));
 
@@ -47,5 +61,43 @@ describe("ChatRoom", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("ready")).toBeInTheDocument();
     expect(screen.getByText("agent-007 is typing...")).toBeInTheDocument();
+  });
+
+  it("renders a live agent stream from ephemeral agent-stream chunks", async () => {
+    const { act } = await import("@testing-library/react");
+    render(<ChatRoom />);
+
+    const handler = onMessageHandlers[onMessageHandlers.length - 1];
+    expect(handler).toBeTypeOf("function");
+
+    await act(async () => {
+      handler({
+        ephemeral: true,
+        type: "agent-stream",
+        sender: { id: "agent-bot" },
+        content: { streamId: "stream-1", chunk: "Lima " },
+      });
+      handler({
+        ephemeral: true,
+        type: "agent-stream",
+        sender: { id: "agent-bot" },
+        content: { streamId: "stream-1", chunk: "is capital." },
+      });
+    });
+
+    expect(screen.getByTestId("agent-stream")).toBeInTheDocument();
+    expect(screen.getByText(/Lima is capital\./)).toBeInTheDocument();
+    expect(screen.getByText(/Agent · streaming/i)).toBeInTheDocument();
+
+    await act(async () => {
+      handler({
+        ephemeral: false,
+        type: "message",
+        sender: { id: "agent-bot" },
+        content: { text: "Lima is capital." },
+      });
+    });
+
+    expect(screen.queryByTestId("agent-stream")).not.toBeInTheDocument();
   });
 });

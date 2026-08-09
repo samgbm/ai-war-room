@@ -9,8 +9,9 @@ type MessageHandler = (msg: {
 
 const sendMock = vi.fn();
 const sendActivityMock = vi.fn();
+const setMetadataMock = vi.fn();
 const acquireMock = vi.fn();
-const generateAgentResponseMock = vi.fn();
+const streamAgentResponseMock = vi.fn();
 
 let messageHandler: MessageHandler | undefined;
 
@@ -21,6 +22,7 @@ vi.mock("../src/portalClient.ts", () => ({
       acquire: acquireMock,
       send: sendMock,
       sendActivity: sendActivityMock,
+      setMetadata: setMetadataMock,
       on: (event: string, fn: MessageHandler) => {
         if (event === "message") messageHandler = fn;
         return () => {};
@@ -30,8 +32,8 @@ vi.mock("../src/portalClient.ts", () => ({
 }));
 
 vi.mock("../src/ai/openaiClient.ts", () => ({
-  generateAgentResponse: (...args: unknown[]) =>
-    generateAgentResponseMock(...args),
+  streamAgentResponse: (...args: unknown[]) => streamAgentResponseMock(...args),
+  generateAgentResponse: vi.fn(),
 }));
 
 describe("startAgentLoop", () => {
@@ -40,13 +42,21 @@ describe("startAgentLoop", () => {
     messageHandler = undefined;
     sendMock.mockReset();
     sendActivityMock.mockReset();
+    setMetadataMock.mockReset();
     acquireMock.mockReset();
-    generateAgentResponseMock.mockReset();
-    generateAgentResponseMock.mockResolvedValue("Lima is the capital of Peru.");
+    streamAgentResponseMock.mockReset();
     sendMock.mockResolvedValue({ id: "ack-1", timestamp: Date.now() });
+
+    streamAgentResponseMock.mockImplementation(
+      async (prompt: string, onChunk: (chunk: string) => void) => {
+        onChunk("Hello ");
+        onChunk("operator.");
+        return "Hello operator.";
+      },
+    );
   });
 
-  it('responds when a message contains "@Agent hello"', async () => {
+  it('streams ephemeral chunks then sends a persistent reply for "@Agent hello"', async () => {
     const { startAgentLoop } = await import("../src/ai/agentLoop.ts");
     await startAgentLoop();
 
@@ -61,10 +71,26 @@ describe("startAgentLoop", () => {
     });
 
     expect(sendActivityMock).toHaveBeenCalledWith("typing");
-    expect(generateAgentResponseMock).toHaveBeenCalledWith("@Agent hello");
+    expect(streamAgentResponseMock).toHaveBeenCalledWith(
+      "@Agent hello",
+      expect.any(Function),
+    );
+
+    const ephemeralCalls = sendMock.mock.calls.filter(
+      ([payload]) => payload?.ephemeral === true && payload?.type === "agent-stream",
+    );
+    expect(ephemeralCalls.length).toBeGreaterThanOrEqual(2);
+    expect(ephemeralCalls[0][0].content).toEqual(
+      expect.objectContaining({
+        streamId: expect.any(String),
+        chunk: "Hello ",
+      }),
+    );
+
     expect(sendMock).toHaveBeenCalledWith({
-      content: { text: "Lima is the capital of Peru." },
+      content: { text: "Hello operator." },
     });
+    expect(setMetadataMock).toHaveBeenCalled();
   });
 
   it("ignores messages without an @Agent mention", async () => {
@@ -78,7 +104,7 @@ describe("startAgentLoop", () => {
       content: { text: "status check only" },
     });
 
-    expect(generateAgentResponseMock).not.toHaveBeenCalled();
+    expect(streamAgentResponseMock).not.toHaveBeenCalled();
     expect(sendMock).not.toHaveBeenCalled();
   });
 });
