@@ -4,6 +4,9 @@ export default defineConfig({
   channels: {
     "war-room-*": {
       anonymous: true,
+      extensions: {
+        agentState: "./extensions/agentState.ts",
+      },
     },
   },
 });

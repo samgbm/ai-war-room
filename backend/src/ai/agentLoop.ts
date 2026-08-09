@@ -1,6 +1,4 @@
-import { audioCache } from "../audioCache.js";
 import { portal } from "../portalClient.js";
-import { generateAgentAudio } from "./elevenlabsClient.js";
 import { streamAgentResponse } from "./openaiClient.js";
 
 const ROOM_ID = "war-room-alpha";
@@ -12,13 +10,24 @@ type ChatContent = {
   text?: string;
   streamId?: string;
   chunk?: string;
-  audioId?: string;
+  status?: string;
 };
 
 function contentText(content: unknown): string | null {
   if (!content || typeof content !== "object") return null;
   const text = (content as ChatContent).text;
   return typeof text === "string" ? text : null;
+}
+
+async function setAgentStatus(
+  room: ReturnType<typeof portal.channel<ChatContent>>,
+  status: string,
+) {
+  await room.send({
+    ephemeral: true,
+    type: "agent.status",
+    content: { status },
+  });
 }
 
 /**
@@ -34,7 +43,7 @@ export async function startAgentLoop(): Promise<void> {
       if (
         msg.type === "cursor" ||
         msg.type === "agent-stream" ||
-        msg.type === "agent-audio"
+        msg.type === "agent.status"
       ) {
         return;
       }
@@ -45,6 +54,7 @@ export async function startAgentLoop(): Promise<void> {
       if (!text || !AGENT_MENTION.test(text)) return;
 
       room.sendActivity("typing");
+      await setAgentStatus(room, "Processing prompt...");
 
       const streamId = Date.now().toString();
       let assembled = "";
@@ -75,26 +85,15 @@ export async function startAgentLoop(): Promise<void> {
       flushStream(true);
       await room.send({ content: { text: fullReply } });
       room.setMetadata({});
-
-      const audioBuffer = await generateAgentAudio(fullReply);
-      if (audioBuffer) {
-        const audioId = Date.now().toString();
-        audioCache.set(audioId, audioBuffer);
-        // Spec: ephemeral fan-out trigger (≤2KB). Portal JS currently drops these inbound.
-        await room.send({
-          ephemeral: true,
-          type: "agent-audio",
-          content: { audioId },
-        });
-        // Durable mirror so clients actually receive the play trigger.
-        await room.send({
-          type: "agent-audio",
-          content: { audioId },
-        });
-      }
+      await setAgentStatus(room, "Standing by");
     } catch (error) {
       console.error("[agent] failed to handle message:", error);
       room.setMetadata({});
+      try {
+        await setAgentStatus(room, "Standing by");
+      } catch {
+        // ignore status reset failures
+      }
     }
   });
 

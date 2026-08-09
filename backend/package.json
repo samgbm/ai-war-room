@@ -12,12 +12,12 @@
   "dependencies": {
     "@portalsdk/core": "^0.1.5",
     "dotenv": "^17.2.1",
-    "elevenlabs": "^1.59.0",
     "express": "^5.1.0",
     "openai": "^5.12.2"
   },
   "devDependencies": {
     "@portalsdk/config": "^0.2.1",
+    "@portalsdk/extension-protocol": "^0.1.0",
     "@types/express": "^5.0.3",
     "@types/node": "^20.19.0",
     "@types/supertest": "^6.0.3",

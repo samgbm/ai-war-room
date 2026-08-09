@@ -15,36 +15,14 @@ type AgentStreamContent = {
   text?: string;
 };
 
-type AgentAudioContent = {
-  audioId: string;
-};
-
 type AgentStreamState = {
   id: string;
   text: string;
 };
 
-function isAgentAudioContent(content: unknown): content is AgentAudioContent {
-  return (
-    !!content &&
-    typeof content === "object" &&
-    typeof (content as { audioId?: unknown }).audioId === "string"
-  );
-}
-
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL ??
-  "https://ai-war-room-production-d17f.up.railway.app";
-
-const playedAudioIds = new Set<string>();
-
-function playAgentAudio(audioId: string) {
-  if (playedAudioIds.has(audioId)) return;
-  playedAudioIds.add(audioId);
-  const audioUrl = `${BACKEND_URL}/api/audio/${audioId}`;
-  const audio = new Audio(audioUrl);
-  audio.play().catch((e) => console.error("Audio playback failed:", e));
-}
+type AgentStatusSnapshot = {
+  status: string;
+};
 
 function statusTone(status: string) {
   if (status === "ready") return "bg-[var(--success)]";
@@ -66,9 +44,20 @@ function isAgentStreamContent(content: unknown): content is AgentStreamContent {
   return !!content && typeof content === "object";
 }
 
+function isAgentStatusContent(
+  content: unknown,
+): content is AgentStatusSnapshot {
+  return (
+    !!content &&
+    typeof content === "object" &&
+    typeof (content as { status?: unknown }).status === "string"
+  );
+}
+
 export function ChatRoom() {
   const [draft, setDraft] = useState("");
   const [agentStream, setAgentStream] = useState<AgentStreamState | null>(null);
+  const [liveAgentStatus, setLiveAgentStatus] = useState<string | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const stickToBottom = useRef(true);
 
@@ -85,14 +74,13 @@ export function ChatRoom() {
     presence,
   } = useWarRoomChannel();
 
-  // Dedicated listener for live agent token stream (same Portal channel handle).
-  useChannel({
+  // Dedicated listener for live agent token stream + extension status (same channel).
+  const { ext } = useChannel({
     ...WAR_ROOM_CHANNEL,
     channelId: roomId,
     onMessage: (msg) => {
-      if (msg.type === "agent-audio" && isAgentAudioContent(msg.content)) {
-        // Ephemeral is preferred; durable mirror covers Portal JS dropping ephemerals.
-        playAgentAudio(msg.content.audioId);
+      if (msg.type === "agent.status" && isAgentStatusContent(msg.content)) {
+        setLiveAgentStatus(msg.content.status);
         return;
       }
 
@@ -123,12 +111,17 @@ export function ChatRoom() {
         !msg.ephemeral &&
         msg.type !== "cursor" &&
         msg.type !== "agent-stream" &&
-        msg.type !== "agent-audio"
+        msg.type !== "agent.status"
       ) {
         setAgentStream(null);
       }
     },
   });
+
+  const agentSnapshot = ext?.["agentState"] as AgentStatusSnapshot | undefined;
+  const agentStatus =
+    liveAgentStatus ?? agentSnapshot?.status ?? "Standing by";
+  const agentBusy = agentStatus !== "Standing by";
 
   // Presence fallback if stream messages are delayed.
   useEffect(() => {
@@ -148,7 +141,7 @@ export function ChatRoom() {
       !m.ephemeral &&
       m.type !== "cursor" &&
       m.type !== "agent-stream" &&
-      m.type !== "agent-audio" &&
+      m.type !== "agent.status" &&
       isChatContent(m.content),
   );
 
@@ -176,6 +169,29 @@ export function ChatRoom() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
+      <div
+        data-testid="agent-status-bar"
+        className={`flex items-center gap-2 border-b border-[var(--border)] px-4 py-2 ${
+          agentBusy
+            ? "bg-[color-mix(in_oklab,var(--primary)_14%,transparent)]"
+            : "bg-[color-mix(in_oklab,var(--background)_70%,transparent)]"
+        }`}
+        aria-live="polite"
+      >
+        <span
+          className={`size-2 shrink-0 rounded-full ${
+            agentBusy
+              ? "animate-pulse bg-[var(--primary)]"
+              : "bg-[var(--muted)]"
+          }`}
+          aria-hidden
+        />
+        <p className="font-mono text-[11px] font-medium tracking-wide text-[var(--foreground)]">
+          <span className="text-[var(--muted)]">Agent Status:</span>{" "}
+          <span className={agentBusy ? "animate-pulse" : ""}>{agentStatus}</span>
+        </p>
+      </div>
+
       <header className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
         <div className="min-w-0">
           <h2 className="font-display text-sm font-semibold text-[var(--foreground)]">

@@ -3,6 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import { ChatRoom } from "@/components/ChatRoom";
 
 const onMessageHandlers: Array<(msg: unknown) => void> = [];
+let mockExt: Record<string, unknown> | undefined = {
+  agentState: { status: "Standing by" },
+};
 
 vi.mock("@portalsdk/react", () => ({
   useChannel: (opts: { onMessage?: (msg: unknown) => void }) => {
@@ -11,6 +14,7 @@ vi.mock("@portalsdk/react", () => ({
       messages: [],
       send: vi.fn(),
       status: "ready",
+      ext: mockExt,
     };
   },
 }));
@@ -46,7 +50,7 @@ vi.mock("@/components/WarRoomChannelProvider", () => ({
 }));
 
 describe("ChatRoom", () => {
-  it("renders mock messages, input form, and typing indicator", () => {
+  it("renders mock messages, input form, typing indicator, and agent status bar", () => {
     render(<ChatRoom />);
 
     expect(screen.getByText("Alpha desk is live.")).toBeInTheDocument();
@@ -61,6 +65,9 @@ describe("ChatRoom", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("ready")).toBeInTheDocument();
     expect(screen.getByText("agent-007 is typing...")).toBeInTheDocument();
+    expect(screen.getByTestId("agent-status-bar")).toHaveTextContent(
+      "Agent Status: Standing by",
+    );
   });
 
   it("renders a live agent stream from durable agent-stream updates", async () => {
@@ -101,34 +108,22 @@ describe("ChatRoom", () => {
     expect(screen.queryByTestId("agent-stream")).not.toBeInTheDocument();
   });
 
-  it("plays agent audio from an agent-audio trigger without rendering UI", async () => {
+  it("updates the agent status bar from agent.status messages", async () => {
     const { act } = await import("@testing-library/react");
-    const play = vi.fn().mockResolvedValue(undefined);
-    const AudioMock = vi.fn(function Audio(this: { play: typeof play }, url: string) {
-      void url;
-      this.play = play;
-    });
-    vi.stubGlobal("Audio", AudioMock);
-
     render(<ChatRoom />);
-    const handler = onMessageHandlers[onMessageHandlers.length - 1];
 
+    const handler = onMessageHandlers[onMessageHandlers.length - 1];
     await act(async () => {
       handler({
         ephemeral: false,
-        type: "agent-audio",
+        type: "agent.status",
         sender: { id: "agent-bot" },
-        content: { audioId: "clip-42" },
+        content: { status: "Processing prompt..." },
       });
     });
 
-    expect(AudioMock).toHaveBeenCalledWith(
-      "https://ai-war-room-production-d17f.up.railway.app/api/audio/clip-42",
+    expect(screen.getByTestId("agent-status-bar")).toHaveTextContent(
+      "Agent Status: Processing prompt...",
     );
-    expect(play).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText(/clip-42/)).not.toBeInTheDocument();
-
-    vi.unstubAllGlobals();
   });
 });
-
