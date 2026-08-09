@@ -1,4 +1,6 @@
+import { audioCache } from "../audioCache.js";
 import { portal } from "../portalClient.js";
+import { generateAgentAudio } from "./elevenlabsClient.js";
 import { streamAgentResponse } from "./openaiClient.js";
 
 const ROOM_ID = "war-room-alpha";
@@ -10,6 +12,7 @@ type ChatContent = {
   text?: string;
   streamId?: string;
   chunk?: string;
+  audioId?: string;
 };
 
 function contentText(content: unknown): string | null {
@@ -28,7 +31,13 @@ export async function startAgentLoop(): Promise<void> {
   room.on("message", async (msg) => {
     try {
       if (msg.ephemeral) return;
-      if (msg.type === "cursor" || msg.type === "agent-stream") return;
+      if (
+        msg.type === "cursor" ||
+        msg.type === "agent-stream" ||
+        msg.type === "agent-audio"
+      ) {
+        return;
+      }
       if (msg.sender.id === "system") return;
       if (room.me?.id && msg.sender.id === room.me.id) return;
 
@@ -66,6 +75,23 @@ export async function startAgentLoop(): Promise<void> {
       flushStream(true);
       await room.send({ content: { text: fullReply } });
       room.setMetadata({});
+
+      const audioBuffer = await generateAgentAudio(fullReply);
+      if (audioBuffer) {
+        const audioId = Date.now().toString();
+        audioCache.set(audioId, audioBuffer);
+        // Spec: ephemeral fan-out trigger (≤2KB). Portal JS currently drops these inbound.
+        await room.send({
+          ephemeral: true,
+          type: "agent-audio",
+          content: { audioId },
+        });
+        // Durable mirror so clients actually receive the play trigger.
+        await room.send({
+          type: "agent-audio",
+          content: { audioId },
+        });
+      }
     } catch (error) {
       console.error("[agent] failed to handle message:", error);
       room.setMetadata({});

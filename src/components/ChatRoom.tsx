@@ -15,10 +15,36 @@ type AgentStreamContent = {
   text?: string;
 };
 
+type AgentAudioContent = {
+  audioId: string;
+};
+
 type AgentStreamState = {
   id: string;
   text: string;
 };
+
+function isAgentAudioContent(content: unknown): content is AgentAudioContent {
+  return (
+    !!content &&
+    typeof content === "object" &&
+    typeof (content as { audioId?: unknown }).audioId === "string"
+  );
+}
+
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ??
+  "https://ai-war-room-production-d17f.up.railway.app";
+
+const playedAudioIds = new Set<string>();
+
+function playAgentAudio(audioId: string) {
+  if (playedAudioIds.has(audioId)) return;
+  playedAudioIds.add(audioId);
+  const audioUrl = `${BACKEND_URL}/api/audio/${audioId}`;
+  const audio = new Audio(audioUrl);
+  audio.play().catch((e) => console.error("Audio playback failed:", e));
+}
 
 function statusTone(status: string) {
   if (status === "ready") return "bg-[var(--success)]";
@@ -64,6 +90,12 @@ export function ChatRoom() {
     ...WAR_ROOM_CHANNEL,
     channelId: roomId,
     onMessage: (msg) => {
+      if (msg.type === "agent-audio" && isAgentAudioContent(msg.content)) {
+        // Ephemeral is preferred; durable mirror covers Portal JS dropping ephemerals.
+        playAgentAudio(msg.content.audioId);
+        return;
+      }
+
       if (msg.type === "agent-stream" && isAgentStreamContent(msg.content)) {
         const streamId = msg.content.streamId;
         if (!streamId) return;
@@ -87,7 +119,12 @@ export function ChatRoom() {
         return;
       }
 
-      if (!msg.ephemeral && msg.type !== "cursor" && msg.type !== "agent-stream") {
+      if (
+        !msg.ephemeral &&
+        msg.type !== "cursor" &&
+        msg.type !== "agent-stream" &&
+        msg.type !== "agent-audio"
+      ) {
         setAgentStream(null);
       }
     },
@@ -111,6 +148,7 @@ export function ChatRoom() {
       !m.ephemeral &&
       m.type !== "cursor" &&
       m.type !== "agent-stream" &&
+      m.type !== "agent-audio" &&
       isChatContent(m.content),
   );
 

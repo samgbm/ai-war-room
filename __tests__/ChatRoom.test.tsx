@@ -100,5 +100,35 @@ describe("ChatRoom", () => {
 
     expect(screen.queryByTestId("agent-stream")).not.toBeInTheDocument();
   });
+
+  it("plays agent audio from an agent-audio trigger without rendering UI", async () => {
+    const { act } = await import("@testing-library/react");
+    const play = vi.fn().mockResolvedValue(undefined);
+    const AudioMock = vi.fn(function Audio(this: { play: typeof play }, url: string) {
+      void url;
+      this.play = play;
+    });
+    vi.stubGlobal("Audio", AudioMock);
+
+    render(<ChatRoom />);
+    const handler = onMessageHandlers[onMessageHandlers.length - 1];
+
+    await act(async () => {
+      handler({
+        ephemeral: false,
+        type: "agent-audio",
+        sender: { id: "agent-bot" },
+        content: { audioId: "clip-42" },
+      });
+    });
+
+    expect(AudioMock).toHaveBeenCalledWith(
+      "https://ai-war-room-production-d17f.up.railway.app/api/audio/clip-42",
+    );
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/clip-42/)).not.toBeInTheDocument();
+
+    vi.unstubAllGlobals();
+  });
 });
 
