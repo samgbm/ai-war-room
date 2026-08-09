@@ -1,26 +1,271 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0b1410;
+  --foreground: #e7f0e8;
+  --surface: #122018;
+  --primary: #d4a017;
+  --primary-foreground: #12140c;
+  --muted: #8fa396;
+  --border: #24362a;
+  --success: #3dba74;
+  --warning: #e0a03a;
+  --danger: #e0564a;
+  --shadow-panel: 0 1px 2px rgb(0 0 0 / 0.18), 0 12px 32px rgb(0 0 0 / 0.22);
+  --grid-line: color-mix(in oklab, var(--foreground) 5%, transparent);
+}
+
+/* 1 — Command */
+.command {
+  --background: #0b1410;
+  --foreground: #e7f0e8;
+  --surface: #122018;
+  --primary: #d4a017;
+  --primary-foreground: #12140c;
+  --muted: #8fa396;
+  --border: #24362a;
+  --success: #3dba74;
+  --warning: #e0a03a;
+  --danger: #e0564a;
+}
+
+/* 2 — Midnight */
+.midnight {
+  --background: #08111f;
+  --foreground: #e8eefc;
+  --surface: #0f1a30;
+  --primary: #5b8cff;
+  --primary-foreground: #08111f;
+  --muted: #93a4c7;
+  --border: #243354;
+  --success: #3ecf8e;
+  --warning: #e6b35a;
+  --danger: #ef6b6b;
+}
+
+/* 3 — Arctic */
+.arctic {
+  --background: #eef3f8;
+  --foreground: #142033;
+  --surface: #ffffff;
+  --primary: #1f5fbf;
+  --primary-foreground: #ffffff;
+  --muted: #5d6f86;
+  --border: #d0dbe8;
+  --success: #1f8f5f;
+  --warning: #c4881a;
+  --danger: #c23b3b;
+  --shadow-panel: 0 1px 2px rgb(20 32 51 / 0.04), 0 12px 28px rgb(20 32 51 / 0.08);
+}
+
+/* 4 — Ember */
+.ember {
+  --background: #160e0c;
+  --foreground: #f6ebe6;
+  --surface: #221512;
+  --primary: #e36a3f;
+  --primary-foreground: #160e0c;
+  --muted: #c0a094;
+  --border: #3b2620;
+  --success: #4caf70;
+  --warning: #e0a03a;
+  --danger: #ef5350;
+}
+
+/* 5 — Graphite */
+.graphite {
+  --background: #121212;
+  --foreground: #f2f2f2;
+  --surface: #1a1a1a;
+  --primary: #d4d4d4;
+  --primary-foreground: #121212;
+  --muted: #a3a3a3;
+  --border: #2e2e2e;
+  --success: #7dcf9a;
+  --warning: #d4b06a;
+  --danger: #e07a7a;
+}
+
+/* 6 — Signal */
+.signal {
+  --background: #05080c;
+  --foreground: #e6f4ff;
+  --surface: #0b121a;
+  --primary: #2ec4ff;
+  --primary-foreground: #041018;
+  --muted: #7f9bb0;
+  --border: #1a2a38;
+  --success: #35d19a;
+  --warning: #f0b429;
+  --danger: #ff5d5d;
+}
+
+/* 7 — Sandstorm */
+.sandstorm {
+  --background: #d8c7a5;
+  --foreground: #2a2418;
+  --surface: #e8d9b8;
+  --primary: #6b3f1d;
+  --primary-foreground: #f4ead2;
+  --muted: #6a5a42;
+  --border: #b9a682;
+  --success: #2f6b45;
+  --warning: #9a6b12;
+  --danger: #9b2f2f;
+  --shadow-panel: 0 1px 2px rgb(42 36 24 / 0.06), 0 12px 28px rgb(42 36 24 / 0.1);
+}
+
+/* 8 — Iceberg */
+.iceberg {
+  --background: #d9e8f2;
+  --foreground: #123043;
+  --surface: #f2f8fc;
+  --primary: #176b8a;
+  --primary-foreground: #f2f8fc;
+  --muted: #4f7084;
+  --border: #b7cddb;
+  --success: #1f8a63;
+  --warning: #b8861a;
+  --danger: #c04040;
+  --shadow-panel: 0 1px 2px rgb(18 48 67 / 0.05), 0 12px 28px rgb(18 48 67 / 0.08);
+}
+
+/* 9 — Terminal */
+.terminal {
+  --background: #07140c;
+  --foreground: #c8f0d0;
+  --surface: #0c1c12;
+  --primary: #39ff88;
+  --primary-foreground: #041008;
+  --muted: #6fa87c;
+  --border: #1a3322;
+  --success: #39ff88;
+  --warning: #d4c15a;
+  --danger: #ff6b6b;
+}
+
+/* 10 — Copper */
+.copper {
+  --background: #1a120e;
+  --foreground: #f3e7db;
+  --surface: #241912;
+  --primary: #c47a45;
+  --primary-foreground: #1a120e;
+  --muted: #b49a86;
+  --border: #3c2a1f;
+  --success: #5fae78;
+  --warning: #d4a03a;
+  --danger: #d85a4a;
+}
+
+/* 11 — Slate */
+.slate {
+  --background: #12161c;
+  --foreground: #e9edf3;
+  --surface: #1a2029;
+  --primary: #7f93b0;
+  --primary-foreground: #12161c;
+  --muted: #9aa6b8;
+  --border: #2c3543;
+  --success: #4caf70;
+  --warning: #d4a03a;
+  --danger: #e0564a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(
+      1200px 600px at 10% -10%,
+      color-mix(in oklab, var(--primary) 12%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(180deg, var(--background), var(--background)),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 31px,
+      var(--grid-line) 32px
+    );
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.animate-fade {
+  animation: fade-in 420ms ease-out both;
+}
+
+.animate-rise {
+  animation: rise-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 1.8s ease-in-out infinite;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--primary) 35%, transparent);
 }
