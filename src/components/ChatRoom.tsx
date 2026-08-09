@@ -28,6 +28,8 @@ export function ChatRoom({ roomId }: ChatRoomProps) {
     hasPrevious,
     isLoadingPrevious,
     status,
+    typing,
+    sendTyping,
   } = useChannel<ChatMessage>({ channelId: roomId, history: 50 });
 
   async function onSubmit(e: FormEvent) {
@@ -100,13 +102,27 @@ export function ChatRoom({ roomId }: ChatRoomProps) {
         )}
       </ul>
 
+      {typing.length > 0 ? (
+        <p
+          className="animate-pulse border-t border-[var(--border)] px-4 pt-2 font-mono text-sm text-[var(--muted)]"
+          aria-live="polite"
+        >
+          {typing.join(", ")} is typing...
+        </p>
+      ) : null}
+
       <form
         onSubmit={onSubmit}
-        className="flex gap-2 border-t border-[var(--border)] p-3 sm:p-4"
+        className={`flex gap-2 p-3 sm:p-4 ${
+          typing.length > 0 ? "" : "border-t border-[var(--border)]"
+        }`}
       >
         <input
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            sendTyping();
+          }}
           placeholder="Transmit to the war room…"
           aria-label="Chat message"
           className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-[var(--foreground)] outline-none ring-[var(--primary)] placeholder:text-[var(--muted)] focus:ring-2"

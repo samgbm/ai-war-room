@@ -21,11 +21,13 @@ vi.mock("@portalsdk/react", () => ({
     hasPrevious: true,
     isLoadingPrevious: false,
     status: "ready",
+    typing: ["agent-007"],
+    sendTyping: vi.fn(),
   }),
 }));
 
 describe("ChatRoom", () => {
-  it("renders mock messages and the input form", () => {
+  it("renders mock messages, input form, and typing indicator", () => {
     render(<ChatRoom roomId="war-room-alpha" />);
 
     expect(screen.getByText("Alpha desk is live.")).toBeInTheDocument();
@@ -39,5 +41,6 @@ describe("ChatRoom", () => {
       screen.getByRole("button", { name: /load older/i }),
     ).toBeInTheDocument();
     expect(screen.getByText("ready")).toBeInTheDocument();
+    expect(screen.getByText("agent-007 is typing...")).toBeInTheDocument();
   });
 });
