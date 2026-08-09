@@ -44,7 +44,7 @@ export function ThemeSwitcher() {
   const meta = THEME_META[current] ?? THEME_META.command;
 
   return (
-    <div className="relative">
+    <div className="relative z-[60]">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -64,14 +64,14 @@ export function ThemeSwitcher() {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-40 cursor-default"
+            className="fixed inset-0 z-[70] cursor-default"
             aria-label="Close theme menu"
             onClick={() => setOpen(false)}
           />
           <div
             role="dialog"
             aria-label="Choose theme"
-            className="absolute right-0 z-50 mt-2 max-h-[min(22rem,70vh)] w-[min(18rem,calc(100vw-1.5rem))] overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[var(--shadow-panel)] animate-rise"
+            className="absolute right-0 z-[80] mt-2 max-h-[min(22rem,70vh)] w-[min(18rem,calc(100vw-1.5rem))] overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[var(--shadow-panel)] animate-rise"
           >
             <p className="mb-1.5 px-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
               11 themes + Auto

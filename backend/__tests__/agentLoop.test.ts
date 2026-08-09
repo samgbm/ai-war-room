@@ -48,7 +48,7 @@ describe("startAgentLoop", () => {
     sendMock.mockResolvedValue({ id: "ack-1", timestamp: Date.now() });
 
     streamAgentResponseMock.mockImplementation(
-      async (prompt: string, onChunk: (chunk: string) => void) => {
+      async (_prompt: string, onChunk: (chunk: string) => void) => {
         onChunk("Hello ");
         onChunk("operator.");
         return "Hello operator.";
@@ -56,7 +56,7 @@ describe("startAgentLoop", () => {
     );
   });
 
-  it('streams ephemeral chunks then sends a persistent reply for "@Agent hello"', async () => {
+  it('streams agent-stream updates then sends a persistent reply for "@Agent hello"', async () => {
     const { startAgentLoop } = await import("../src/ai/agentLoop.ts");
     await startAgentLoop();
 
@@ -76,16 +76,20 @@ describe("startAgentLoop", () => {
       expect.any(Function),
     );
 
-    const ephemeralCalls = sendMock.mock.calls.filter(
-      ([payload]) => payload?.ephemeral === true && payload?.type === "agent-stream",
+    const streamCalls = sendMock.mock.calls.filter(
+      ([payload]) => payload?.type === "agent-stream",
     );
-    expect(ephemeralCalls.length).toBeGreaterThanOrEqual(2);
-    expect(ephemeralCalls[0][0].content).toEqual(
-      expect.objectContaining({
-        streamId: expect.any(String),
-        chunk: "Hello ",
-      }),
+    expect(streamCalls.length).toBeGreaterThanOrEqual(1);
+    expect(streamCalls.some(([payload]) => payload?.ephemeral === true)).toBe(
+      true,
     );
+    expect(
+      streamCalls.some(
+        ([payload]) =>
+          payload?.ephemeral !== true &&
+          typeof payload?.content?.text === "string",
+      ),
+    ).toBe(true);
 
     expect(sendMock).toHaveBeenCalledWith({
       content: { text: "Hello operator." },

@@ -3,6 +3,8 @@ import { streamAgentResponse } from "./openaiClient.js";
 
 const ROOM_ID = "war-room-alpha";
 const AGENT_MENTION = /@agent\b/i;
+/** Portal JS drops inbound ephemeral frames — mirror the stream with durable updates. */
+const STREAM_FLUSH_MS = 50;
 
 type ChatContent = {
   text?: string;
@@ -37,18 +39,31 @@ export async function startAgentLoop(): Promise<void> {
 
       const streamId = Date.now().toString();
       let assembled = "";
+      let lastFlush = 0;
+
+      const flushStream = (force = false) => {
+        const now = Date.now();
+        if (!force && now - lastFlush < STREAM_FLUSH_MS) return;
+        lastFlush = now;
+        void room.send({
+          type: "agent-stream",
+          content: { streamId, text: assembled, chunk: "" },
+        });
+        room.setMetadata({ agentStream: { streamId, text: assembled } });
+      };
 
       const fullReply = await streamAgentResponse(text, (chunk) => {
         assembled += chunk;
+        // Keep trying ephemeral (no-op on current Portal JS clients).
         void room.send({
           ephemeral: true,
           type: "agent-stream",
           content: { streamId, chunk },
         });
-        // Presence mirror — Portal JS currently drops inbound ephemeral frames.
-        room.setMetadata({ agentStream: { streamId, text: assembled } });
+        flushStream(false);
       });
 
+      flushStream(true);
       await room.send({ content: { text: fullReply } });
       room.setMetadata({});
     } catch (error) {

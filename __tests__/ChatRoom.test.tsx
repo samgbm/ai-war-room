@@ -63,7 +63,7 @@ describe("ChatRoom", () => {
     expect(screen.getByText("agent-007 is typing...")).toBeInTheDocument();
   });
 
-  it("renders a live agent stream from ephemeral agent-stream chunks", async () => {
+  it("renders a live agent stream from durable agent-stream updates", async () => {
     const { act } = await import("@testing-library/react");
     render(<ChatRoom />);
 
@@ -72,16 +72,16 @@ describe("ChatRoom", () => {
 
     await act(async () => {
       handler({
-        ephemeral: true,
+        ephemeral: false,
         type: "agent-stream",
         sender: { id: "agent-bot" },
-        content: { streamId: "stream-1", chunk: "Lima " },
+        content: { streamId: "stream-1", text: "Lima " },
       });
       handler({
-        ephemeral: true,
+        ephemeral: false,
         type: "agent-stream",
         sender: { id: "agent-bot" },
-        content: { streamId: "stream-1", chunk: "is capital." },
+        content: { streamId: "stream-1", text: "Lima is capital." },
       });
     });
 
@@ -101,3 +101,4 @@ describe("ChatRoom", () => {
     expect(screen.queryByTestId("agent-stream")).not.toBeInTheDocument();
   });
 });
+

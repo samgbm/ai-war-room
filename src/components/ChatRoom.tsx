@@ -12,6 +12,7 @@ export interface ChatMessage {
 type AgentStreamContent = {
   streamId?: string;
   chunk?: string;
+  text?: string;
 };
 
 type AgentStreamState = {
@@ -63,18 +64,26 @@ export function ChatRoom() {
     ...WAR_ROOM_CHANNEL,
     channelId: roomId,
     onMessage: (msg) => {
-      if (msg.ephemeral && msg.type === "agent-stream") {
-        if (!isAgentStreamContent(msg.content)) return;
+      if (msg.type === "agent-stream" && isAgentStreamContent(msg.content)) {
         const streamId = msg.content.streamId;
-        const chunk = msg.content.chunk;
-        if (!streamId || typeof chunk !== "string") return;
+        if (!streamId) return;
 
-        setAgentStream((current) => {
-          if (current?.id === streamId) {
-            return { id: streamId, text: current.text + chunk };
-          }
-          return { id: streamId, text: chunk };
-        });
+        // Preferred: full assembled text from durable stream flushes.
+        if (typeof msg.content.text === "string" && msg.content.text.length > 0) {
+          setAgentStream({ id: streamId, text: msg.content.text });
+          return;
+        }
+
+        // Fallback: append ephemeral token chunks (if the SDK delivers them).
+        if (msg.ephemeral && typeof msg.content.chunk === "string") {
+          const chunk = msg.content.chunk;
+          setAgentStream((current) => {
+            if (current?.id === streamId) {
+              return { id: streamId, text: current.text + chunk };
+            }
+            return { id: streamId, text: chunk };
+          });
+        }
         return;
       }
 
@@ -84,7 +93,7 @@ export function ChatRoom() {
     },
   });
 
-  // Presence fallback while Portal SDK drops inbound ephemeral frames.
+  // Presence fallback if stream messages are delayed.
   useEffect(() => {
     if (presence?.kind !== "detailed") return;
     for (const p of presence.participants) {
