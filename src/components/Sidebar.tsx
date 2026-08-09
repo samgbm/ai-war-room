@@ -1,3 +1,4 @@
+import { NotificationBell } from "@/components/NotificationBell";
 import { PresenceRoster } from "@/components/PresenceRoster";
 
 export function Sidebar() {
@@ -6,13 +7,16 @@ export function Sidebar() {
       className="hidden h-full w-64 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface)] md:flex"
       aria-label="War room sidebar"
     >
-      <div className="border-b border-[var(--border)] px-4 py-4">
-        <p className="font-display text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
-          AI War Room
-        </p>
-        <h2 className="mt-1 font-display text-lg font-semibold tracking-tight text-[var(--foreground)]">
-          Presence
-        </h2>
+      <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-4 py-4">
+        <div className="min-w-0">
+          <p className="font-display text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
+            AI War Room
+          </p>
+          <h2 className="mt-1 font-display text-lg font-semibold tracking-tight text-[var(--foreground)]">
+            Presence
+          </h2>
+        </div>
+        <NotificationBell />
       </div>
 
       <section className="flex-1 space-y-6 overflow-y-auto px-4 py-4">

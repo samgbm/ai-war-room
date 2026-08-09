@@ -60,6 +60,8 @@ export function ChatRoom() {
   const [liveAgentStatus, setLiveAgentStatus] = useState<string | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const stickToBottom = useRef(true);
+  /** Prevents presence/metadata from re-opening a stream after the final reply lands. */
+  const completedStreamIds = useRef(new Set<string>());
 
   const {
     roomId,
@@ -86,7 +88,7 @@ export function ChatRoom() {
 
       if (msg.type === "agent-stream" && isAgentStreamContent(msg.content)) {
         const streamId = msg.content.streamId;
-        if (!streamId) return;
+        if (!streamId || completedStreamIds.current.has(streamId)) return;
 
         // Preferred: full assembled text from durable stream flushes.
         if (typeof msg.content.text === "string" && msg.content.text.length > 0) {
@@ -111,9 +113,19 @@ export function ChatRoom() {
         !msg.ephemeral &&
         msg.type !== "cursor" &&
         msg.type !== "agent-stream" &&
-        msg.type !== "agent.status"
+        msg.type !== "agent.status" &&
+        isChatContent(msg.content)
       ) {
-        setAgentStream(null);
+        const finalText = msg.content.text.trim();
+        setAgentStream((current) => {
+          if (!current) return null;
+          // Final agent reply replaces the live bubble (avoid duplicate boxes).
+          if (finalText === current.text.trim()) {
+            completedStreamIds.current.add(current.id);
+            return null;
+          }
+          return current;
+        });
       }
     },
   });
@@ -123,17 +135,33 @@ export function ChatRoom() {
     liveAgentStatus ?? agentSnapshot?.status ?? "Standing by";
   const agentBusy = agentStatus !== "Standing by";
 
-  // Presence fallback if stream messages are delayed.
+  // Presence fallback if stream messages are delayed — also clears when metadata drops.
   useEffect(() => {
     if (presence?.kind !== "detailed") return;
+
+    let found: AgentStreamState | null = null;
     for (const p of presence.participants) {
       const stream = p.metadata?.agentStream as
         | { streamId?: string; text?: string }
         | undefined;
       if (!stream?.streamId || typeof stream.text !== "string") continue;
-      setAgentStream({ id: stream.streamId, text: stream.text });
+      if (completedStreamIds.current.has(stream.streamId)) continue;
+      found = { id: stream.streamId, text: stream.text };
+      break;
+    }
+
+    if (found) {
+      setAgentStream(found);
       return;
     }
+
+    // Metadata cleared after the final reply — drop the streaming bubble.
+    setAgentStream((current) => {
+      if (!current) return null;
+      if (completedStreamIds.current.has(current.id)) return null;
+      // Keep message-driven streams alive until the final reply marks them complete.
+      return current;
+    });
   }, [presence]);
 
   const chatMessages = messages.filter(
@@ -145,11 +173,27 @@ export function ChatRoom() {
       isChatContent(m.content),
   );
 
+  // Hide the streaming bubble once the same answer is already in the log.
+  const committedStream =
+    !!agentStream &&
+    chatMessages.some(
+      (m) =>
+        isChatContent(m.content) &&
+        m.content.text.trim() === agentStream.text.trim(),
+    );
+  const visibleAgentStream = committedStream ? null : agentStream;
+
+  useEffect(() => {
+    if (!committedStream || !agentStream) return;
+    completedStreamIds.current.add(agentStream.id);
+    setAgentStream(null);
+  }, [committedStream, agentStream]);
+
   useEffect(() => {
     const el = listRef.current;
     if (!el || !stickToBottom.current) return;
     el.scrollTop = el.scrollHeight;
-  }, [chatMessages.length, typing.length, agentStream?.text]);
+  }, [chatMessages.length, typing.length, visibleAgentStream?.text]);
 
   function onScroll() {
     const el = listRef.current;
@@ -230,7 +274,7 @@ export function ChatRoom() {
         onScroll={onScroll}
         className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-4"
       >
-        {chatMessages.length === 0 && !agentStream ? (
+        {chatMessages.length === 0 && !visibleAgentStream ? (
           <li className="m-auto max-w-sm list-none text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--primary)]">
               channel quiet
@@ -255,7 +299,7 @@ export function ChatRoom() {
           ))
         )}
 
-        {agentStream ? (
+        {visibleAgentStream ? (
           <li
             data-testid="agent-stream"
             className="list-none rounded-lg border border-dashed border-[var(--primary)] bg-[color-mix(in_oklab,var(--primary)_10%,transparent)] px-3 py-2.5"
@@ -264,7 +308,7 @@ export function ChatRoom() {
               Agent · streaming
             </p>
             <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-[var(--foreground)]">
-              {agentStream.text}
+              {visibleAgentStream.text}
               <span className="ml-0.5 inline-block h-4 w-1 animate-pulse bg-[var(--primary)] align-middle" />
             </p>
           </li>
