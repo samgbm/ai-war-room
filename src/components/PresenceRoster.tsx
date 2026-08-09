@@ -1,10 +1,6 @@
 "use client";
 
-import { useChannel } from "@portalsdk/react";
-
-type PresenceRosterProps = {
-  roomId: string;
-};
+import { useWarRoomChannel } from "@/components/WarRoomChannelProvider";
 
 function displayName(participant: {
   id: string;
@@ -13,8 +9,8 @@ function displayName(participant: {
   return participant.username?.trim() || participant.id;
 }
 
-export function PresenceRoster({ roomId }: PresenceRosterProps) {
-  const { presence } = useChannel({ channelId: roomId });
+export function PresenceRoster() {
+  const { presence } = useWarRoomChannel();
 
   if (presence === undefined) {
     return (

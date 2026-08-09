@@ -2,16 +2,21 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ChatRoom } from "@/components/ChatRoom";
 
-vi.mock("@portalsdk/react", () => ({
-  useChannel: () => ({
+vi.mock("@/components/WarRoomChannelProvider", () => ({
+  useWarRoomChannel: () => ({
+    roomId: "war-room-alpha",
     messages: [
       {
         id: "msg-1",
+        type: "message",
+        ephemeral: false,
         sender: { id: "op-lead" },
         content: { text: "Alpha desk is live." },
       },
       {
         id: "msg-2",
+        type: "message",
+        ephemeral: false,
         sender: { id: "scout" },
         content: { text: "Recon sweep complete." },
       },
@@ -28,7 +33,7 @@ vi.mock("@portalsdk/react", () => ({
 
 describe("ChatRoom", () => {
   it("renders mock messages, input form, and typing indicator", () => {
-    render(<ChatRoom roomId="war-room-alpha" />);
+    render(<ChatRoom />);
 
     expect(screen.getByText("Alpha desk is live.")).toBeInTheDocument();
     expect(screen.getByText("Recon sweep complete.")).toBeInTheDocument();

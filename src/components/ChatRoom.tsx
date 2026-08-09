@@ -1,15 +1,11 @@
 "use client";
 
-import { useChannel } from "@portalsdk/react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useWarRoomChannel } from "@/components/WarRoomChannelProvider";
 
 export interface ChatMessage {
   text: string;
 }
-
-type ChatRoomProps = {
-  roomId: string;
-};
 
 function statusTone(status: string) {
   if (status === "ready") return "bg-[var(--success)]";
@@ -19,9 +15,21 @@ function statusTone(status: string) {
   return "bg-[var(--muted)]";
 }
 
-export function ChatRoom({ roomId }: ChatRoomProps) {
+function isChatContent(content: unknown): content is ChatMessage {
+  return (
+    !!content &&
+    typeof content === "object" &&
+    typeof (content as ChatMessage).text === "string"
+  );
+}
+
+export function ChatRoom() {
   const [draft, setDraft] = useState("");
+  const listRef = useRef<HTMLUListElement>(null);
+  const stickToBottom = useRef(true);
+
   const {
+    roomId,
     messages,
     send,
     loadPrevious,
@@ -30,12 +38,33 @@ export function ChatRoom({ roomId }: ChatRoomProps) {
     status,
     typing,
     sendTyping,
-  } = useChannel<ChatMessage>({ channelId: roomId, history: 50 });
+  } = useWarRoomChannel();
+
+  const chatMessages = messages.filter(
+    (m) =>
+      !m.ephemeral &&
+      m.type !== "cursor" &&
+      isChatContent(m.content),
+  );
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || !stickToBottom.current) return;
+    el.scrollTop = el.scrollHeight;
+  }, [chatMessages.length, typing.length]);
+
+  function onScroll() {
+    const el = listRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottom.current = distanceFromBottom < 80;
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const text = draft.trim();
     if (!text) return;
+    stickToBottom.current = true;
     await send({ content: { text } });
     setDraft("");
   }
@@ -75,8 +104,12 @@ export function ChatRoom({ roomId }: ChatRoomProps) {
         </button>
       </div>
 
-      <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-4">
-        {messages.length === 0 ? (
+      <ul
+        ref={listRef}
+        onScroll={onScroll}
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-4"
+      >
+        {chatMessages.length === 0 ? (
           <li className="m-auto max-w-sm list-none text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--primary)]">
               channel quiet
@@ -86,7 +119,7 @@ export function ChatRoom({ roomId }: ChatRoomProps) {
             </p>
           </li>
         ) : (
-          messages.map((m) => (
+          chatMessages.map((m) => (
             <li
               key={m.id}
               className="list-none rounded-lg border border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_55%,transparent)] px-3 py-2.5"
@@ -95,7 +128,7 @@ export function ChatRoom({ roomId }: ChatRoomProps) {
                 {m.sender.id}
               </p>
               <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-[var(--foreground)]">
-                {m.content.text}
+                {isChatContent(m.content) ? m.content.text : ""}
               </p>
             </li>
           ))

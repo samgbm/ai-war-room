@@ -14,8 +14,10 @@ vi.mock("next-themes", () => ({
   ThemeProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
-vi.mock("@portalsdk/react", () => ({
-  useChannel: () => ({
+vi.mock("@/components/WarRoomChannelProvider", () => ({
+  WarRoomChannelProvider: ({ children }: { children: ReactNode }) => children,
+  useWarRoomChannel: () => ({
+    roomId: "war-room-alpha",
     messages: [],
     send: vi.fn(),
     loadPrevious: vi.fn(),
@@ -24,6 +26,10 @@ vi.mock("@portalsdk/react", () => ({
     status: "ready",
     typing: [],
     sendTyping: vi.fn(),
+    setMetadata: vi.fn(),
+    publishCursor: vi.fn(),
+    remoteCursors: {},
+    me: { id: "test-user", anon: true, claims: {} },
     presence: {
       kind: "detailed",
       participants: [{ id: "test-user", anon: true }],

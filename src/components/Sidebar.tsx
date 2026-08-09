@@ -44,7 +44,7 @@ export function Sidebar() {
           <h3 className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
             Human Operators
           </h3>
-          <PresenceRoster roomId="war-room-alpha" />
+          <PresenceRoster />
         </div>
       </section>
     </aside>
