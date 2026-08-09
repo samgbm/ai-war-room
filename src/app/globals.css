@@ -172,6 +172,29 @@
   --danger: #e0564a;
 }
 
+/* 12 — Mura (Happy Hues) — https://github.com/mohanadkandil/Mura */
+.mura {
+  --background: #fef6e4;
+  --foreground: #172c66;
+  --surface: #f3d2c1;
+  --primary: #f582ae;
+  --primary-foreground: #001858;
+  --muted: #172c66;
+  --border: #001858;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --shadow-panel: 4px 4px 0 #001858;
+  --grid-line: color-mix(in oklab, #8bd3dd 18%, transparent);
+}
+
+html.mura {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(139, 211, 221, 0.14) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(245, 130, 174, 0.12) 0%, transparent 50%),
+    var(--background);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

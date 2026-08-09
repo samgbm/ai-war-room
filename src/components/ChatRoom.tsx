@@ -2,6 +2,10 @@
 
 import { useChannel } from "@portalsdk/react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  ConnectionBanner,
+  type ConnectionStatus,
+} from "@/components/ConnectionBanner";
 import { useWarRoomChannel } from "@/components/WarRoomChannelProvider";
 import { WAR_ROOM_CHANNEL } from "@/lib/war-room";
 
@@ -77,7 +81,7 @@ export function ChatRoom() {
   } = useWarRoomChannel();
 
   // Dedicated listener for live agent token stream + extension status (same channel).
-  const { ext } = useChannel({
+  const { ext, status: channelStatus } = useChannel({
     ...WAR_ROOM_CHANNEL,
     channelId: roomId,
     onMessage: (msg) => {
@@ -207,8 +211,12 @@ export function ChatRoom() {
     const text = draft.trim();
     if (!text) return;
     stickToBottom.current = true;
-    await send({ content: { text } });
-    setDraft("");
+    try {
+      await send({ content: { text } });
+      setDraft("");
+    } catch (error) {
+      console.error("[chat] failed to send message:", error);
+    }
   }
 
   return (
@@ -268,6 +276,8 @@ export function ChatRoom() {
           {isLoadingPrevious ? "Loading…" : "Load Older"}
         </button>
       </div>
+
+      <ConnectionBanner status={channelStatus as ConnectionStatus} />
 
       <ul
         ref={listRef}

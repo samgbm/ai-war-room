@@ -11,6 +11,7 @@ export const THEMES = [
   "terminal",
   "copper",
   "slate",
+  "mura",
 ] as const;
 
 export type ThemeName = (typeof THEMES)[number];
@@ -82,5 +83,10 @@ export const THEME_META: Record<
     label: "Slate",
     swatch: "#12161c",
     description: "Cool industrial gray",
+  },
+  mura: {
+    label: "Mura",
+    swatch: "#f582ae",
+    description: "Happy Hues cream / pink",
   },
 };

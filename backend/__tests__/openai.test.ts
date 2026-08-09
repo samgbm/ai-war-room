@@ -53,6 +53,13 @@ describe("openaiClient", () => {
     );
   });
 
+  it("toPlainText strips markdown emphasis and headings", async () => {
+    const { toPlainText } = await import("../src/ai/openaiClient.ts");
+    expect(toPlainText("**Operation: Feline Rescue**\n\n**Objective:** Save a cat.")).toBe(
+      "Operation: Feline Rescue\n\nObjective: Save a cat.",
+    );
+  });
+
   it("streamAgentResponse emits chunks and returns the full string", async () => {
     async function* fakeStream() {
       yield { choices: [{ delta: { content: "Lima" } }] };

@@ -7,8 +7,28 @@ export const openai = new OpenAI({
 const FALLBACK =
   "Agent offline due to cognitive overload. Retry shortly.";
 
-const SYSTEM_PROMPT =
-  "You are an AI War Room agent. Be concise, operational, and actionable.";
+const SYSTEM_PROMPT = [
+  "You are an AI War Room agent. Be concise, operational, and actionable.",
+  "Reply in plain text only. Never use Markdown or rich formatting:",
+  "no asterisks for bold/italic, no headings with #, no bullet markers like -, *, or numbered markdown lists,",
+  "no code fences, no underscores for emphasis, and no HTML.",
+  "Write short paragraphs or simple numbered lines using '1.' style only when a list is truly needed.",
+].join(" ");
+
+/** Strip common Markdown decorations the model sometimes still emits. */
+export function toPlainText(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, (block) =>
+      block.replace(/```\w*\n?/g, "").replace(/```/g, ""),
+    )
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/(\*\*|__)(.*?)\1/g, "$2")
+    .replace(/(\*|_)(.*?)\1/g, "$2")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 /**
  * Lightweight agent reasoning call — gpt-4o-mini for low-latency demos.
@@ -26,7 +46,7 @@ export async function generateAgentResponse(prompt: string): Promise<string> {
     });
 
     const text = completion.choices[0]?.message?.content?.trim();
-    return text || FALLBACK;
+    return text ? toPlainText(text) : FALLBACK;
   } catch (error) {
     console.error("[openai] generateAgentResponse failed:", error);
     return FALLBACK;
@@ -60,7 +80,8 @@ export async function streamAgentResponse(
       onChunk(token);
     }
 
-    return full.trim() || FALLBACK;
+    const plain = toPlainText(full);
+    return plain || FALLBACK;
   } catch (error) {
     console.error("[openai] streamAgentResponse failed:", error);
     onChunk(FALLBACK);

@@ -56,7 +56,6 @@ export function WarRoomChannelProvider({
   >({});
   const meIdRef = useRef<string | undefined>(undefined);
   const lastMetaSend = useRef(0);
-  const lastPersistSend = useRef(0);
 
   const channel = useChannel<WarRoomPayload>({
     ...WAR_ROOM_CHANNEL,
@@ -102,20 +101,12 @@ export function WarRoomChannelProvider({
     return (position: CursorPosition) => {
       const now = Date.now();
 
-      // Presence fallback — works across clients with current Portal SDK.
+      // Presence metadata is the reliable fan-out path (ephemeral inbound is dropped).
+      // Do not flood the channel with durable cursor messages — Portal rate-limits /
+      // rejects them and those rejections were surfacing as unhandledRejection spam.
       if (now - lastMetaSend.current > 100) {
         lastMetaSend.current = now;
         channel.setMetadata({ cursor: position });
-      }
-
-      // Throttled persistent cursor signal — Portal SDK currently drops inbound
-      // ephemeral frames, so this is what other clients actually receive.
-      if (now - lastPersistSend.current > 120) {
-        lastPersistSend.current = now;
-        void channel.send({
-          type: CURSOR_TYPE,
-          content: position,
-        });
       }
     };
   }, [channel]);

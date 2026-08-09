@@ -21,7 +21,7 @@ vi.mock("@portalsdk/react", () => ({
 }));
 
 describe("PortalProviderWrapper", () => {
-  it("renders children successfully with a mock operator token", () => {
+  it("renders children successfully in Anonymous Mode", () => {
     render(
       <PortalProviderWrapper>
         <span>war-room-child</span>

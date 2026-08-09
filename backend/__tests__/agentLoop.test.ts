@@ -34,6 +34,11 @@ vi.mock("../src/portalClient.ts", () => ({
 vi.mock("../src/ai/openaiClient.ts", () => ({
   streamAgentResponse: (...args: unknown[]) => streamAgentResponseMock(...args),
   generateAgentResponse: vi.fn(),
+  toPlainText: (text: string) =>
+    text
+      .replace(/(\*\*|__)(.*?)\1/g, "$2")
+      .replace(/(\*|_)(.*?)\1/g, "$2")
+      .trim(),
 }));
 
 describe("startAgentLoop", () => {
@@ -109,6 +114,14 @@ describe("startAgentLoop", () => {
       content: { text: "Hello operator." },
       mentions: [{ userId: "human-op" }],
     });
+    // Final reply must not retain markdown decorations from the model.
+    expect(
+      sendMock.mock.calls.some(
+        ([payload]) =>
+          typeof payload?.content?.text === "string" &&
+          payload.content.text.includes("**"),
+      ),
+    ).toBe(false);
     expect(setMetadataMock).toHaveBeenCalled();
   });
 

@@ -1,5 +1,5 @@
 import { portal } from "../portalClient.js";
-import { streamAgentResponse } from "./openaiClient.js";
+import { streamAgentResponse, toPlainText } from "./openaiClient.js";
 
 const ROOM_ID = "war-room-alpha";
 const AGENT_MENTION = /@agent\b/i;
@@ -64,11 +64,12 @@ export async function startAgentLoop(): Promise<void> {
         const now = Date.now();
         if (!force && now - lastFlush < STREAM_FLUSH_MS) return;
         lastFlush = now;
+        const plain = toPlainText(assembled);
         void room.send({
           type: "agent-stream",
-          content: { streamId, text: assembled, chunk: "" },
+          content: { streamId, text: plain, chunk: "" },
         });
-        room.setMetadata({ agentStream: { streamId, text: assembled } });
+        room.setMetadata({ agentStream: { streamId, text: plain } });
       };
 
       const fullReply = await streamAgentResponse(text, (chunk) => {
@@ -82,9 +83,10 @@ export async function startAgentLoop(): Promise<void> {
         flushStream(false);
       });
 
+      const plainReply = toPlainText(fullReply);
       flushStream(true);
       await room.send({
-        content: { text: fullReply },
+        content: { text: plainReply },
         mentions: [{ userId: msg.sender.id }],
       });
       room.setMetadata({});

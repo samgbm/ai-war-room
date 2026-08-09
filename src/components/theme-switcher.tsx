@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import {
+  THEMES,
   THEME_META,
   THEME_OPTIONS,
   type ThemeOption,
@@ -74,7 +75,7 @@ export function ThemeSwitcher() {
             className="absolute right-0 z-[80] mt-2 max-h-[min(22rem,70vh)] w-[min(18rem,calc(100vw-1.5rem))] overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[var(--shadow-panel)] animate-rise"
           >
             <p className="mb-1.5 px-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-              11 themes + Auto
+              {THEMES.length} themes + Auto
             </p>
             <div className="grid grid-cols-1 gap-0.5">
               {THEME_OPTIONS.map((name) => {

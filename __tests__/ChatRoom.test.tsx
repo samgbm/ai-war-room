@@ -13,7 +13,7 @@ vi.mock("@portalsdk/react", () => ({
     return {
       messages: [],
       send: vi.fn(),
-      status: "ready",
+      status: "ready" as const,
       ext: mockExt,
     };
   },
