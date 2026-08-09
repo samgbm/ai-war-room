@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Sora } from "next/font/google";
+import { PortalProviderWrapper } from "@/components/PortalProviderWrapper";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
@@ -29,7 +30,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${sora.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <Providers>{children}</Providers>
+        <Providers>
+          <PortalProviderWrapper>{children}</PortalProviderWrapper>
+        </Providers>
       </body>
     </html>
   );
