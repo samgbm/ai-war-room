@@ -3,22 +3,6 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import HomePage from "./page";
 
-vi.mock("@portalsdk/react", () => ({
-  useChannel: () => ({
-    messages: [],
-    send: vi.fn(),
-    presence: null,
-    typing: [],
-    sendTyping: vi.fn(),
-    status: "ready",
-    me: { id: "test-user", anon: true, claims: {} },
-    setMetadata: vi.fn(),
-    unread: 0,
-    markAsRead: vi.fn(),
-  }),
-  PortalProvider: ({ children }: { children: ReactNode }) => children,
-}));
-
 vi.mock("next-themes", () => ({
   useTheme: () => ({
     theme: "command",
@@ -39,7 +23,7 @@ describe("HomePage", () => {
     render(<HomePage />);
 
     expect(
-      screen.getByRole("heading", { level: 1, name: /alpha strike/i }),
+      screen.getByRole("heading", { level: 1, name: /the ai war room/i }),
     ).toBeInTheDocument();
   });
 });
